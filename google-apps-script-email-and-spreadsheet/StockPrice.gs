@@ -1,10 +1,10 @@
 /**
- * Sends emails with data from the current spreadsheet.
+ * Analyze stock price.
  */
-function sendEmails() {
-  var EMAIL = 'your-email@gmail.com';
+function analyzeStock() {
+  var EMAIL = 'email@gmail.com';
   var SHEET_RANGE = 'B4:D18';
-  var SHEET_NAME = 'sheet-name';
+  var SHEET_NAME = 'Alert';
   
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   var dataRange = sheet.getRange(SHEET_RANGE);
@@ -21,8 +21,10 @@ function sendEmails() {
       var subject = stock + ' - Sent by Google Apps Script';
       var message = stock + ' with expected price (' + currentPrice + ' / ' + expectedPrice + ')';
     
-      MailApp.sendEmail(EMAIL, subject, message);
-      Logger.log(message);
+      if(needToSend(sheet, i)) {
+        MailApp.sendEmail(EMAIL, subject, message);
+        Logger.log(message);
+      }
     
     } else {
       var message = stock + ' with price higher than expected (' + currentPrice + ' / ' + expectedPrice + ')';
@@ -31,4 +33,23 @@ function sendEmails() {
     
   }
   
+}
+
+/**
+ * Valid whether or not email is sent.
+ */
+function needToSend(sheet, row) {
+  var now = new Date();
+  var timeZone = 'America/Sao_Paulo';
+  var today = Utilities.formatDate(now, timeZone, 'yyyyMMdd');
+  
+  var range = 'F' + (row + 4);
+  var cell = sheet.getRange(range);
+   
+  if(today > cell.getValue()) {
+    cell.setValue(today);
+    return true;
+  }
+    
+  return false;
 }
