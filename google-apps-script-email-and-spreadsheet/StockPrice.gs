@@ -2,7 +2,7 @@
  * Analyze stock price.
  */
 function analyzeStock() {
-  var EMAIL = 'email@gmail.com';
+  var EMAIL = 'erick.henrique.gm@gmail.com';
   var SHEET_RANGE = 'B4:D18';
   var SHEET_NAME = 'Alert';
   
@@ -24,6 +24,9 @@ function analyzeStock() {
       if(needToSend(sheet, i)) {
         MailApp.sendEmail(EMAIL, subject, message);
         Logger.log(message);
+      } else {
+        message = stock + ' - Alert already sent';
+        Logger.log(message);
       }
     
     } else {
@@ -39,17 +42,22 @@ function analyzeStock() {
  * Valid whether or not email is sent.
  */
 function needToSend(sheet, row) {
+  var TIME_ZONE = 'America/Sao_Paulo';
+  var MIN_HOUR = '100000';
+  var MAX_HOUR = '180000';
+  
   var now = new Date();
-  var timeZone = 'America/Sao_Paulo';
-  var today = Utilities.formatDate(now, timeZone, 'yyyyMMdd');
+  var currentDate = Utilities.formatDate(now, TIME_ZONE, 'yyyyMMdd');
+  var currentHour = Utilities.formatDate(now, TIME_ZONE, 'HHmmss');
   
   var range = 'F' + (row + 4);
-  var cell = sheet.getRange(range);
+  var lastSendDateCell = sheet.getRange(range);
    
-  if(today > cell.getValue()) {
-    cell.setValue(today);
+  if(currentDate > lastSendDateCell.getValue() 
+    && (currentHour > MIN_HOUR && currentHour < MAX_HOUR)) {
+    lastSendDateCell.setValue(currentDate);
     return true;
   }
-    
+  
   return false;
 }
