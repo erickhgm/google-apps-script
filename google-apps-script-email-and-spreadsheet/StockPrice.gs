@@ -2,7 +2,7 @@
  * Analyze stock price.
  */
 function analyzeStock() {
-  var EMAIL = 'erick.henrique.gm@gmail.com';
+  var EMAIL = 'youremail@gmail.com';
   var SHEET_RANGE = 'B4:D18';
   var SHEET_NAME = 'Alert';
   
@@ -45,16 +45,21 @@ function needToSend(sheet, row) {
   var TIME_ZONE = 'America/Sao_Paulo';
   var MIN_HOUR = '100000';
   var MAX_HOUR = '180000';
+  var MIN_DAY = '1';
+  var MAX_DAY = '5';
   
   var now = new Date();
   var currentDate = Utilities.formatDate(now, TIME_ZONE, 'yyyyMMdd');
   var currentHour = Utilities.formatDate(now, TIME_ZONE, 'HHmmss');
+  var currentDay = Utilities.formatDate(now, TIME_ZONE, 'u');
   
   var range = 'F' + (row + 4);
   var lastSendDateCell = sheet.getRange(range);
    
   if(currentDate > lastSendDateCell.getValue() 
-    && (currentHour > MIN_HOUR && currentHour < MAX_HOUR)) {
+    && (currentHour > MIN_HOUR && currentHour < MAX_HOUR)
+    && (currentDay >= MIN_DAY && currentDay <= MAX_DAY)) {
+      
     lastSendDateCell.setValue(currentDate);
     return true;
   }
