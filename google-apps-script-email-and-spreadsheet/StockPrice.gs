@@ -2,9 +2,9 @@
  * Analyze stock price.
  */
 function analyzeStock() {
-  var EMAIL = 'youremail@gmail.com';
-  var SHEET_RANGE = 'B4:D18';
-  var SHEET_NAME = 'Alert';
+  var EMAIL = 'youremail@email.com';
+  var SHEET_RANGE = 'B3:D19';
+  var SHEET_NAME = 'Alerta';
   
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   var dataRange = sheet.getRange(SHEET_RANGE);
@@ -43,8 +43,8 @@ function analyzeStock() {
  */
 function needToSend(sheet, row) {
   var TIME_ZONE = 'America/Sao_Paulo';
-  var MIN_HOUR = '100000';
-  var MAX_HOUR = '180000';
+  var MIN_HOUR = '103000';
+  var MAX_HOUR = '183000';
   var MIN_DAY = '1';
   var MAX_DAY = '5';
   
@@ -55,7 +55,7 @@ function needToSend(sheet, row) {
   
   var range = 'F' + (row + 4);
   var lastSendDateCell = sheet.getRange(range);
-   
+  
   if(currentDate > lastSendDateCell.getValue() 
     && (currentHour > MIN_HOUR && currentHour < MAX_HOUR)
     && (currentDay >= MIN_DAY && currentDay <= MAX_DAY)) {
