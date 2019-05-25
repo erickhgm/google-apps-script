@@ -53,7 +53,7 @@ function needToSend(sheet, row) {
   var currentHour = Utilities.formatDate(now, TIME_ZONE, 'HHmmss');
   var currentDay = Utilities.formatDate(now, TIME_ZONE, 'u');
   
-  var range = 'F' + (row + 4);
+  var range = 'F' + (parseFloat(i) + 4);
   var lastSendDateCell = sheet.getRange(range);
   
   if(currentDate > lastSendDateCell.getValue() 
