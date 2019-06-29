@@ -1,9 +1,9 @@
 /**
- * Analyze stock price.
+ * The main function to run. Execute this to extract data.
  */
-function analyzeStock() {
-  var EMAIL = 'youremail@email.com';
-  var SHEET_RANGE = 'B3:D19';
+function runStockPriceAlert() {
+  var EMAIL = 'erick.henrique.gm@gmail.com';
+  var SHEET_RANGE = 'B3:D18';
   var SHEET_NAME = 'Alerta';
   
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
@@ -21,7 +21,7 @@ function analyzeStock() {
       var subject = stock + ' - Sent by Google Apps Script';
       var message = stock + ' with expected price (' + currentPrice + ' / ' + expectedPrice + ')';
     
-      if(needToSend(sheet, i)) {
+      if(isNeedToSend(sheet, i)) {
         MailApp.sendEmail(EMAIL, subject, message);
         Logger.log(message);
       } else {
@@ -39,14 +39,14 @@ function analyzeStock() {
 }
 
 /**
- * Valid whether or not email is sent.
+ * Valid whether email is sent.
  */
-function needToSend(sheet, row) {
+function isNeedToSend(sheet, row) {
   var TIME_ZONE = 'America/Sao_Paulo';
   var MIN_HOUR = '103000';
   var MAX_HOUR = '183000';
-  var MIN_DAY = '1';
-  var MAX_DAY = '5';
+  var MIN_WEEK_DAY = '1';
+  var MAX_WEEK_DAY = '5';
   
   var now = new Date();
   var currentDate = Utilities.formatDate(now, TIME_ZONE, 'yyyyMMdd');
@@ -54,13 +54,13 @@ function needToSend(sheet, row) {
   var currentDay = Utilities.formatDate(now, TIME_ZONE, 'u');
   
   var range = 'F' + (parseFloat(i) + 4);
-  var lastSendDateCell = sheet.getRange(range);
+  var lastSendCell = sheet.getRange(range);
   
-  if(currentDate > lastSendDateCell.getValue() 
+  if(currentDate > lastSendCell.getValue() 
     && (currentHour > MIN_HOUR && currentHour < MAX_HOUR)
-    && (currentDay >= MIN_DAY && currentDay <= MAX_DAY)) {
+    && (currentDay >= MIN_WEEK_DAY && currentDay <= MAX_WEEK_DAY)) {
       
-    lastSendDateCell.setValue(currentDate);
+    lastSendCell.setValue(currentDate);
     return true;
   }
   

@@ -1,69 +1,197 @@
-function updateByFundamentus() {
-  var SHEET_RANGE = 'B3:B19';
-  var SHEET_NAME = 'Fundamentos';
+/**
+ * The main function to run. Execute this to extract data.
+ */
+function main() {
   
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-  var dataRange = sheet.getRange(SHEET_RANGE);
+  var SHEET_NAME = 'Fundamentus';
+  var isFirst = true;
   
-  var data = dataRange.getValues();
-  for (i in data) {
-    var row = data[i];
+  var stocks = getAllStocksOnFundamentus();
+  
+  var row = 2;
+  stocks.forEach(function(stock) {
     
-    var stock = row[0];
+    if (isFirst) {
+      var headers = getStocksHeader(stock);
+      buildHeader(SHEET_NAME, headers);
+      isFirst = false;
+    }
     
-    var values = scrapFundamentus(stock);
+    var details = getStockDetails(stock);
+    buildDetail(SHEET_NAME, stock, details, row);
     
-    var pl = values[0];
-    var cell = 'D' + (3 + parseFloat(i));
-    sheet.getRange(cell).setValue(pl);
-    
-    var pvp = values[1];
-    var cell = 'E' + (3 + parseFloat(i));
-    sheet.getRange(cell).setValue(pvp);
-    
-    var roe = values[2];
-    cell = 'F' + (3 + parseFloat(i));
-    sheet.getRange(cell).setValue(roe);
-    
-    var dy = values[3];
-    var cell = 'G' + (3 + parseFloat(i));
-    sheet.getRange(cell).setValue(dy);
-    
-    var mLiq = values[4];
-    cell = 'H' + (3 + parseFloat(i));
-    sheet.getRange(cell).setValue(mLiq);
-    
+    row++;
+  });
+}
+
+/**
+ * Extract only the stock ticker
+ */
+function getAllStocksOnFundamentus() {
+
+  var URL = 'http://www.fundamentus.com.br/resultado.php?setor=';
+  var REGEX = /<a href="detalhes.php\?papel=([\s\S]*?)<\/a>/gim;
+  
+  var response = UrlFetchApp.fetch(URL);
+  var matchs = response.getContentText('ISO-8859-1').match(REGEX);
+  
+  var stocks = [];
+  matchs.forEach(function(element) {
+    var stock = getStockNameInHTML(element);
+    stocks.push(stock);
+  });
+  
+  return stocks;
+}
+
+/**
+ * Extract only the stock ticker from tag '<a>'
+ */
+function getStockNameInHTML(html) {
+  
+  var REGEX = /<a href="detalhes.php\?papel=([\s\S]*?)">([\s\S]*?)<\/a>/gim;
+  var REPLACE = '$2';
+  
+  var stock = '';
+  try {
+    stock = html.replace(REGEX, REPLACE);
+  } catch(error) {
+    stock = 'ERROR';
   }
   
+  return stock.trim();
 }
 
-function scrapFundamentus(stock) {
-
-  var URL = 'https://www.fundamentus.com.br/detalhes.php?papel=';
-  var REGEX = /<span class="txt">([\s\S]*?)<\/span>/gi;
-  var INDEX_PL = 32;
-  var INDEX_PVP = 37;
-  var INDEX_M_LIQ = 54;
-  var INDEX_ROE = 69;
-  var INDEX_DY = 67;
+/**
+ * Extract column names
+ */
+function getStocksHeader(stock) {
   
-  var response = UrlFetchApp.fetch(URL + stock);
-  var match = response.getContentText().match(REGEX);
+  var REGEX = /<td class="label([\s\S]*?)<\/span><\/td>/gim;
+  var URL = 'https://www.fundamentus.com.br/detalhes.php?papel=' + stock;
   
-  var pl = getAttributeValue(match[INDEX_PL].toString());
-  var pvp = getAttributeValue(match[INDEX_PVP].toString());
-  var roe = getAttributeValue(match[INDEX_ROE].toString());
-  var dy = getAttributeValue(match[INDEX_DY].toString());
-  var mLiq = getAttributeValue(match[INDEX_M_LIQ].toString());
+  var response = UrlFetchApp.fetch(URL);
+  var matchs = response.getContentText('ISO-8859-1').match(REGEX);
   
-  return new Array(pl, pvp, roe, dy, mLiq);
-  
+  return matchs;  
 }
 
-function getAttributeValue(text) {
-  return text.replace('<span class="txt">', '')
-  .replace('</span>', '')
-  .replace(',', '.')
-  .replace('%', '')
-  .trim();
+/**
+ * Write column names
+ */
+function buildHeader(SHEET_NAME, headers) {
+  
+  var columns = ['Papel', 'Tipo', 'Data últ cot', 'Empresa', 'Setor', 'Subsetor', 'Últ balanço processado'];
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  
+  var column = 1;
+  var row = 1;
+  
+  headers.forEach(function(element) {
+    var header = getHeaderAttributeValue(element);
+    
+    // Always show 2 decimal points
+    if (columns.indexOf(header) == -1) {
+      sheet.getRange((row + 1), column, 800).setNumberFormat("#,##0.00");
+    }
+      
+    sheet.getRange(row, column).setValue(header);
+    column++;
+  });
+}
+
+/**
+ * Extract text from '<span>' with class 'txt'
+ */
+function getHeaderAttributeValue(text) {
+  
+  var REGEX = /.*<span class="txt">([\s\S]*?)<\/span><\/td>/gim;
+  var REPLACE = '$1';
+  
+  var header = '';
+  try {
+    header = text.replace(REGEX, REPLACE);
+  } catch(error) {
+    header = 'ERROR';
+  }
+  
+  return header.trim();
+}
+
+/**
+ * Extract values corresponding to each column
+ */
+function getStockDetails(stock) {
+  
+  var REGEX = /<td class="data([\s\S]*?)<\/span><\/td>/gim;
+  var URL = 'https://www.fundamentus.com.br/detalhes.php?papel=' + stock;
+  
+  var response = UrlFetchApp.fetch(URL);
+  var details = response.getContentText('ISO-8859-1').match(REGEX);
+  
+  return details;
+}
+
+/**
+ * Write values corresponding to each column
+ */
+function buildDetail(SHEET_NAME, stock, details, row) {
+  
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  
+  var column = 1;
+
+  details.forEach(function(element) {
+    if (true) {
+      var detail = getDetailAttributeValue(element);
+      sheet.getRange(row, column).setValue(detail);
+      column++;
+    }
+  });
+}
+
+/**
+ * Extract text from '<span>' with class 'txt' or 'oscil'
+ */
+function getDetailAttributeValue(text) {
+  
+  var REGEX = /.*<span class="(txt|oscil)">(<font color="(.*)">)?([\s\S]*?)(<\/font><\/span><\/td>|<\/span><\/td>)/gim;
+  var REPLACE = '$4';
+  
+  var header = '';
+  try {
+    header = text.replace(REGEX, REPLACE);
+    
+    /*
+    * Check for string 'resultado.php' to get only the stock ticker
+    */
+    if (header.indexOf('resultado.php') != -1) {
+      REGEX = /<a href="resultado.php([\s\S]*?)>(.*)<\/a>/gim;
+      REPLACE = '$2';
+      
+      header = header.replace(REGEX, REPLACE);
+    }
+    
+  } catch(error) {
+    header = 'ERROR';
+  }
+  
+  return formatValues(header.trim());
+}
+
+/**
+ * Format numeric values
+ */
+function formatValues(value) {
+  
+  var REGEX = /(.*),(\d{2}|\d{1})(%$|$)/gim;
+  var REPLACE = '$1.$2$3';
+  
+  if (value.length > 3) {
+    value = value.replace('%', '');
+    value = value.replace(/\./gim, ',');
+    value = value.replace(REGEX, REPLACE);
+  }
+  
+  return value;
 }
